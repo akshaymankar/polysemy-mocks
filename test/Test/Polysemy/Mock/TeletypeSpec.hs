@@ -1,12 +1,16 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Test.Polysemy.Mock.TeletypeSpec where
 
+import Data.Functor.Identity
 import Data.Kind
 import Polysemy
 import Polysemy.Internal (send)
@@ -25,62 +29,62 @@ read = send Read
 write :: Member Teletype r => String -> Sem r ()
 write = send . Write
 
-instance Mock Teletype where
-  data MockImpl Teletype m a where
-    MockRead :: MockImpl Teletype m String
-    MockWrite :: String -> MockImpl Teletype m ()
-    MockReadReturns :: IO String -> MockImpl Teletype m ()
-    MockWriteReturns :: (String -> IO ()) -> MockImpl Teletype m ()
-    MockReadCalls :: MockImpl Teletype m [()]
-    MockWriteCalls :: MockImpl Teletype m [String]
+instance forall n. Mock Teletype n where
+  data MockImpl Teletype n m a where
+    MockRead :: MockImpl Teletype n m String
+    MockWrite :: String -> MockImpl Teletype n m ()
+    MockReadReturns :: n String -> MockImpl Teletype n m ()
+    MockWriteReturns :: (String -> n ()) -> MockImpl Teletype n m ()
+    MockReadCalls :: MockImpl Teletype n m [()]
+    MockWriteCalls :: MockImpl Teletype n m [String]
 
-  data MockState Teletype = MockState
+  data MockState Teletype n = MockState
     { readCalls :: [()],
       writeCalls :: [String],
-      readReturns :: IO String,
-      writeReturns :: String -> IO ()
+      readReturns :: n String,
+      writeReturns :: String -> n ()
     }
 
   initialMockState = MockState [] [] (error "Unimplemented") (error "Unimplemented")
 
   mock = interpret $ \case
-    Read -> send MockRead
-    Write s -> send $ MockWrite s
+    Read -> send @(MockImpl Teletype n) MockRead
+    Write s -> send @(MockImpl Teletype n) $ MockWrite s
   mockToState = reinterpretH $ \case
     MockRead -> do
-      state <- get
+      state <- get @(MockState Teletype n)
       put state {readCalls = readCalls state ++ [()]}
       pureT =<< embed (readReturns state)
     MockWrite s -> do
-      state <- get
+      state <- get @(MockState Teletype n)
       put state {writeCalls = writeCalls state ++ [s]}
       pureT =<< embed (writeReturns state s)
     MockReadReturns f -> do
-      state <- get
+      state <- get @(MockState Teletype n)
       put state {readReturns = f}
       pureT ()
     MockWriteReturns f -> do
-      state <- get
+      state <- get @(MockState Teletype n)
       put state {writeReturns = f}
       pureT ()
     MockReadCalls -> do
-      state <- get
+      state <- get @(MockState Teletype n)
       pureT (readCalls state)
     MockWriteCalls -> do
-      state <- get
+      state <- get @(MockState Teletype n)
       pureT (writeCalls state)
 
-mockWriteReturns :: (String -> IO ()) -> Sem '[MockImpl Teletype, Embed IO] ()
+mockWriteReturns :: (String -> m ()) -> Sem '[MockImpl Teletype m, Embed m] ()
 mockWriteReturns = send . MockWriteReturns
 
-mockReadReturns :: IO String -> Sem '[MockImpl Teletype, Embed IO] ()
+mockReadReturns :: m String -> Sem '[MockImpl Teletype m, Embed m] ()
 mockReadReturns = send . MockReadReturns
 
-mockReadCalls :: Sem '[MockImpl Teletype, Embed IO] [()]
-mockReadCalls = send MockReadCalls
+mockReadCalls :: forall m. Sem '[MockImpl Teletype m, Embed m] [()]
+mockReadCalls = send @(MockImpl Teletype m) MockReadCalls
 
-mockWriteCalls :: Sem '[MockImpl Teletype, Embed IO] [String]
-mockWriteCalls = send MockWriteCalls
+mockWriteCalls :: forall m. Sem '[MockImpl Teletype m, Embed m] [String]
+mockWriteCalls = send @(MockImpl Teletype m) MockWriteCalls
 
 program :: Member Teletype r => Sem r ()
 program = do
@@ -92,9 +96,15 @@ program = do
 spec :: Spec
 spec =
   describe "program" $ do
-    it "greets" $ runM @IO . runMock $ do
+    it "greets" $ runM @IO . evalMock $ do
       mockWriteReturns (const $ pure ())
       mockReadReturns (pure "Akshay")
-      mock @Teletype program
+      mock @Teletype @IO program
       writeCalls <- mockWriteCalls
       embed $ writeCalls `shouldBe` ["Name: ", "Hello Akshay"]
+    it "greets without IO" $ do
+      let state = runIdentity . runM @Identity . execMock $ do
+            mockWriteReturns (const $ pure ())
+            mockReadReturns (pure "Akshay")
+            mock @Teletype @Identity program
+      writeCalls state `shouldBe` ["Name: ", "Hello Akshay"]
