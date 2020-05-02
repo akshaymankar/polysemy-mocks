@@ -11,6 +11,10 @@ import Polysemy.Internal.TH.Common
 import Polysemy.State (get, put)
 import Test.Polysemy.Mock
 
+-- | Generate mock using template-haskell.
+-- Example usage:
+--
+-- > genMock ''Teletype
 genMock :: Name -> Q [Dec]
 genMock effName = do
   (_, constructors) <- getEffectMetadata effName

@@ -49,4 +49,5 @@ test-suite tests
   other-modules:
       Test.Polysemy.Mock.TeletypeTHSpec
       Test.Polysemy.Mock.TeletypeSpec
+      Test.Polysemy.Mock.TeletypeIdentitySpec
   build-tool-depends:  hspec-discover:hspec-discover
