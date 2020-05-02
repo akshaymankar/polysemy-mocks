@@ -20,7 +20,7 @@ import Test.Polysemy.Mock
 import Test.Polysemy.Mock.TH (genMock)
 import Prelude hiding (read)
 
-data Teletype (m :: * -> *) a where
+data Teletype (m :: Type -> Type) a where
   Read :: Teletype m String
   Write :: String -> Teletype m ()
 
@@ -51,5 +51,5 @@ spec =
       mockWriteReturns (const $ pure ())
       mockReadReturns (pure "Akshay")
       mock @Teletype @IO program
-      writeCalls <- mockWriteCalls
-      embed $ writeCalls `shouldBe` ["Name: ", "Hello Akshay"]
+      writes <- mockWriteCalls
+      embed $ writes `shouldBe` ["Name: ", "Hello Akshay"]

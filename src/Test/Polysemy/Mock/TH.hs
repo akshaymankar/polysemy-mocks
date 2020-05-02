@@ -105,7 +105,6 @@ mkMockToStateMatch t c =
   let pat = ConP (mockConName c) (map VarP vars)
       --
       vars = map fst (cliFunArgs c)
-      arity = length $ cliFunArgs c
       newArgs = ListE [TupE (map (VarE . fst) $ cliFunArgs c)]
       oldArgs = AppE (VarE (callsFieldName c)) (VarE stateName)
       allArgs = InfixE (Just oldArgs) (VarE '(++)) (Just newArgs)

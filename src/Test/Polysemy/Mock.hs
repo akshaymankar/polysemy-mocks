@@ -14,10 +14,8 @@ module Test.Polysemy.Mock
   )
 where
 
-import Data.Functor.Identity
 import Data.Kind
 import Polysemy
-import Polysemy.Internal
 import Polysemy.State
 
 class Mock (x :: Effect) (m :: Type -> Type) where
