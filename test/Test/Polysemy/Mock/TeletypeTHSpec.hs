@@ -14,7 +14,6 @@ module Test.Polysemy.Mock.TeletypeTHSpec where
 
 import Data.Kind
 import Polysemy
-import Polysemy.Internal (send)
 import Test.Hspec
 import Test.Polysemy.Mock
 import Test.Polysemy.Mock.TH (genMock)
@@ -27,15 +26,6 @@ data Teletype (m :: Type -> Type) a where
 makeSem ''Teletype
 
 genMock ''Teletype
-
-mockWriteReturns :: (String -> m ()) -> Sem '[MockImpl Teletype m, Embed m] ()
-mockWriteReturns = send . MockWriteReturns
-
-mockReadReturns :: m String -> Sem '[MockImpl Teletype m, Embed m] ()
-mockReadReturns = send . MockReadReturns
-
-mockWriteCalls :: forall m. Sem '[MockImpl Teletype m, Embed m] [String]
-mockWriteCalls = send @(MockImpl Teletype m) MockWriteCalls
 
 program :: Member Teletype r => Sem r ()
 program = do

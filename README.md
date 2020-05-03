@@ -37,15 +37,6 @@ makeSem ''Teletype
 
 genMock ''Teletype
 
-mockWriteReturns :: (String -> m ()) -> Sem '[MockImpl Teletype m, Embed m] ()
-mockWriteReturns = send . MockWriteReturns
-
-mockReadReturns :: m String -> Sem '[MockImpl Teletype m, Embed m] ()
-mockReadReturns = send . MockReadReturns
-
-mockWriteCalls :: forall m. Sem '[MockImpl Teletype m, Embed m] [String]
-mockWriteCalls = send @(MockImpl Teletype m) MockWriteCalls
-
 program :: Member Teletype r => Sem r ()
 program = do
   write "Name: "

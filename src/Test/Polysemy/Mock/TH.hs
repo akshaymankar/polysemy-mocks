@@ -5,7 +5,7 @@ module Test.Polysemy.Mock.TH (genMock) where
 import Data.Bifunctor (first)
 import Data.List (foldl')
 import Language.Haskell.TH hiding (Strict)
-import Polysemy (interpret, pureT, reinterpretH)
+import Polysemy (Embed, Sem, interpret, pureT, reinterpretH)
 import Polysemy.Internal (embed, send)
 import Polysemy.Internal.TH.Common
 import Polysemy.State (get, put)
@@ -52,19 +52,25 @@ genMock effName = do
           <> map (mkCallsToStateMatch mockStateType) constructors
   let mockToStateBody = NormalB (AppE (VarE 'reinterpretH) (LamCaseE mockToStateMatches))
   let mockToStateD = FunD 'mockToState [Clause [] mockToStateBody []]
+  -- instance
+  let mockInstanceD =
+        InstanceD
+          Nothing
+          []
+          (ConT ''Mock `AppT` ConT effName `AppT` returnsEffect)
+          [ mockImplD,
+            mockStateD,
+            initialStateD,
+            mockD,
+            mockToStateD
+          ]
+
+  -- makeSem
+  let semD =
+        concatMap (mkReturnsSem mockImplEffectType) constructors
+          <> concatMap (mkCallsSem mockImplEffectType) constructors
   -- Bring it together
-  pure
-    [ InstanceD
-        Nothing
-        []
-        (ConT ''Mock `AppT` ConT effName `AppT` returnsEffect)
-        [ mockImplD,
-          mockStateD,
-          initialStateD,
-          mockD,
-          mockToStateD
-        ]
-    ]
+  pure $ mockInstanceD : semD
 
 mkMockConstructor :: Type -> ConLiftInfo -> Con
 mkMockConstructor t c =
@@ -156,6 +162,43 @@ mkCallsToStateMatch t c =
           )
    in Match pat body []
 
+mkReturnsSem ::
+  -- | Should look like: @MockImpl Teletype n@
+  -- n is assumed to be 'stateEffectName', maybe this is problematic, but it works for now
+  Type ->
+  ConLiftInfo ->
+  [Dec]
+mkReturnsSem mockImplEffType c =
+  let funcName = mkName ("mock" <> nameBase (cliConName c) <> "Returns")
+      body = NormalB (InfixE (Just $ VarE 'send) (VarE '(.)) (Just $ ConE (returnsConName c)))
+      appArrowT = AppT . AppT ArrowT
+      typ = returnsFunctionType c `appArrowT` semEffListType mockImplEffType (TupleT 0)
+   in [ SigD funcName typ,
+        FunD funcName [Clause [] body []]
+      ]
+
+mkCallsSem ::
+  -- | Should look like: @MockImpl Teletype n@
+  -- n is assumed to be 'stateEffectName', maybe this is problematic, but it works for now
+  Type ->
+  ConLiftInfo ->
+  [Dec]
+mkCallsSem mockImplEffType c =
+  let funcName = mkName ("mock" <> nameBase (cliConName c) <> "Calls")
+      typeAppliedSend = VarE 'send `AppTypeE` mockImplEffType
+      body = NormalB $ typeAppliedSend `AppE` ConE (callsConName c)
+      typ = ForallT [PlainTV returnsEffectName] [] (semEffListType mockImplEffType $ functionCallType c)
+   in [ SigD funcName typ,
+        FunD funcName [Clause [] body []]
+      ]
+
+semEffListType :: Type -> Type -> Type
+semEffListType mockImplEffType stateEffect =
+  let embededStateEffect = ConT ''Embed `AppT` VarT returnsEffectName
+      appConsT = AppT . AppT PromotedConsT
+      effList = foldr appConsT PromotedNilT [mockImplEffType, embededStateEffect]
+   in ConT ''Sem `AppT` effList `AppT` stateEffect
+
 getState :: Type -> Stmt
 getState t = BindS (VarP stateName) (VarE 'get `AppTypeE` t)
 
@@ -195,4 +238,7 @@ returnsFunctionType c =
    in foldr (AppT . AppT ArrowT) returnType argTypes
 
 returnsEffect :: Type
-returnsEffect = VarT $ mkName "n"
+returnsEffect = VarT returnsEffectName
+
+returnsEffectName :: Name
+returnsEffectName = mkName "n"
