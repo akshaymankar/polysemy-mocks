@@ -38,7 +38,6 @@ spec :: Spec
 spec =
   describe "program" $ do
     it "greets" $ runM @IO . evalMock $ do
-      mockWriteReturns (const $ pure ())
       mockReadReturns (pure "Akshay")
       mock @Teletype @IO program
       writes <- mockWriteCalls

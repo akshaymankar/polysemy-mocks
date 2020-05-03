@@ -56,7 +56,7 @@ genMock effName = do
   let mockInstanceD =
         InstanceD
           Nothing
-          []
+          [ConT ''Applicative `AppT` returnsEffect]
           (ConT ''Mock `AppT` ConT effName `AppT` returnsEffect)
           [ mockImplD,
             mockStateD,
@@ -64,7 +64,6 @@ genMock effName = do
             mockD,
             mockToStateD
           ]
-
   -- makeSem
   let semD =
         concatMap (mkReturnsSem mockImplEffectType) constructors
@@ -99,7 +98,11 @@ mkInitialCalls c =
 
 mkInitialReturns :: ConLiftInfo -> (Name, Exp)
 mkInitialReturns c =
-  (returnsFieldName c, AppE (VarE 'error) (LitE (StringL "Not implemented")))
+  let returnsFn =
+        case cliEffRes c of
+          (TupleT 0) -> LamE (map (const WildP) $ cliFunArgs c) $ AppE (VarE 'pure) (TupE [])
+          _ -> AppE (VarE 'error) (LitE (StringL "Not implemented"))
+   in (returnsFieldName c, returnsFn)
 
 mkMockMatch :: Type -> ConLiftInfo -> Match
 mkMockMatch t c =
