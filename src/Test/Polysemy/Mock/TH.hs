@@ -5,7 +5,7 @@ module Test.Polysemy.Mock.TH (genMock) where
 import Data.Bifunctor (first)
 import Data.List (foldl')
 import Language.Haskell.TH hiding (Strict)
-import Polysemy (Embed, Sem, interpret, pureT, reinterpretH)
+import Polysemy (Embed, Members, Sem, interpret, pureT, reinterpretH)
 import Polysemy.Internal (embed, send)
 import Polysemy.Internal.TH.Common
 import Polysemy.State (get, put)
@@ -175,7 +175,9 @@ mkReturnsSem mockImplEffType c =
   let funcName = mkName ("mock" <> nameBase (cliConName c) <> "Returns")
       body = NormalB (InfixE (Just $ VarE 'send) (VarE '(.)) (Just $ ConE (returnsConName c)))
       appArrowT = AppT . AppT ArrowT
-      typ = returnsFunctionType c `appArrowT` semEffListType mockImplEffType (TupleT 0)
+      r = VarT $ mkName "r"
+      semr t = ConT ''Sem `AppT` r `AppT` t
+      typ = ForallT [] [membersEffListType mockImplEffType r] (returnsFunctionType c `appArrowT` semr (TupleT 0))
    in [ SigD funcName typ,
         FunD funcName [Clause [] body []]
       ]
@@ -190,17 +192,19 @@ mkCallsSem mockImplEffType c =
   let funcName = mkName ("mock" <> nameBase (cliConName c) <> "Calls")
       typeAppliedSend = VarE 'send `AppTypeE` mockImplEffType
       body = NormalB $ typeAppliedSend `AppE` ConE (callsConName c)
-      typ = ForallT [PlainTV returnsEffectName] [] (semEffListType mockImplEffType $ functionCallType c)
+      r = VarT $ mkName "r"
+      semr t = ConT ''Sem `AppT` r `AppT` t
+      typ = ForallT [PlainTV returnsEffectName, PlainTV $ mkName "r"] [membersEffListType mockImplEffType r] (semr $ functionCallType c)
    in [ SigD funcName typ,
         FunD funcName [Clause [] body []]
       ]
 
-semEffListType :: Type -> Type -> Type
-semEffListType mockImplEffType stateEffect =
+membersEffListType :: Type -> Type -> Type
+membersEffListType mockImplEffType r =
   let embededStateEffect = ConT ''Embed `AppT` VarT returnsEffectName
       appConsT = AppT . AppT PromotedConsT
       effList = foldr appConsT PromotedNilT [mockImplEffType, embededStateEffect]
-   in ConT ''Sem `AppT` effList `AppT` stateEffect
+   in ConT ''Members `AppT` effList `AppT` r
 
 getState :: Type -> Stmt
 getState t = BindS (VarP stateName) (VarE 'get `AppTypeE` t)

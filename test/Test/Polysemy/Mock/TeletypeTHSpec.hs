@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -37,8 +38,8 @@ program = do
 spec :: Spec
 spec =
   describe "program" $ do
-    it "greets" $ runM @IO . evalMock $ do
-      mockReadReturns (pure "Akshay")
+    it "greets" $ runM @IO . evalMock @Teletype @IO $ do
+      mockReadReturns @IO (pure "Akshay")
       mock @Teletype @IO program
-      writes <- mockWriteCalls
+      writes <- mockWriteCalls @IO
       embed $ writes `shouldBe` ["Name: ", "Hello Akshay"]
