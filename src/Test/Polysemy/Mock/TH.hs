@@ -28,7 +28,7 @@ genMock effName = do
           <> map (mkMockCalls mockImplReturnType) constructors
   let mockImplD = DataInstD [] Nothing mockImplDataType Nothing mockImplConstructors []
   -- MockState
-  let mockStateConName = mkName (nameBase ''MockState)
+  mockStateConName <- newName (nameBase ''MockState <> nameBase effName)
   let mockStateRec =
         map mkMockStateCallsField constructors
           <> map mkMockStateReturnsField constructors
