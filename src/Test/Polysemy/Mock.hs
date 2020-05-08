@@ -1,16 +1,25 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Test.Polysemy.Mock
   ( Mock (..),
     runMock,
     evalMock,
     execMock,
+    MockMany (..),
+    MocksExist,
+    MockChain,
+    MockImpls,
   )
 where
 
@@ -138,3 +147,37 @@ evalMock = evalState initialMockState . mockToState
 -- | Like 'runMock' but only returns the 'MockState'
 execMock :: (Mock eff m, Member (Embed m) r) => Sem (MockImpl eff m ': r) a -> Sem r (MockState eff m)
 execMock = execState initialMockState . mockToState
+
+-- | Mock many effects
+class MockMany (effs :: EffectRow) m (r :: EffectRow) where
+  -- | Give a computation using a list of effects, transform it into a computation using Mocks of those effects
+  mockMany :: MockChain effs m r => Sem (effs :++: r) a -> Sem r a
+
+  -- | Given a computation using Mock effects, evaluate the computation
+  evalMocks :: (MocksExist effs m, Member (Embed m) r) => Sem (MockImpls effs m :++: r) a -> Sem r a
+
+instance MockMany '[] r m where
+  mockMany = id
+  evalMocks = id
+
+instance (MockMany effs m r, Member (Embed m) (MockImpls effs m :++: r)) => MockMany (eff ': effs) m r where
+  mockMany = mockMany @effs @m . mock @eff @m
+  evalMocks = evalMocks @effs @m . evalMock @eff
+
+type family MockChain (xs :: EffectRow) m (r :: EffectRow) :: Constraint where
+  MockChain '[] r m = ()
+  MockChain (x ': xs) m r = (Mock x m, Member (MockImpl x m) (xs :++: r), MockChain xs m r)
+
+-- | Append type level lists
+type family (xs :: [a]) :++: r :: [a] where
+  '[] :++: r = r
+  (x ': xs) :++: r = x ': (xs :++: r)
+
+-- | Constraint to assert existence of mocks for each effect in 'xs' for state effect 'm'
+type family MocksExist (xs :: EffectRow) m :: Constraint where
+  MocksExist '[] _ = ()
+  MocksExist (x ': xs) m = (Mock x m, MocksExist xs m)
+
+type family MockImpls (xs :: EffectRow) m where
+  MockImpls '[] _ = '[]
+  MockImpls (x ': xs) m = MockImpl x m ': MockImpls xs m
