@@ -101,7 +101,7 @@ mkInitialReturns c =
   let returnsFn =
         case cliEffRes c of
           (TupleT 0) -> LamE (map (const WildP) $ cliFunArgs c) $ AppE (VarE 'pure) (TupE [])
-          _ -> AppE (VarE 'error) (LitE (StringL "Not implemented"))
+          _ -> AppE (VarE 'error) (LitE (StringL $ "Unexpected mock invocation: " <> nameBase (cliFunName c)))
    in (returnsFieldName c, returnsFn)
 
 mkMockMatch :: Type -> ConLiftInfo -> Match
