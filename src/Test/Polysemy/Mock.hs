@@ -20,6 +20,7 @@ module Test.Polysemy.Mock
     MocksExist,
     MockChain,
     MockImpls,
+    (:++:),
   )
 where
 
