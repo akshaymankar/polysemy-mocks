@@ -11,6 +11,8 @@ copyright:      2020 Akshay Mankar
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
+category:       Testing
+synopsis:       Mocking framework for polysemy effects
 extra-source-files:
     README.md
     ChangeLog.md
