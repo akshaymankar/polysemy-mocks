@@ -1,3 +1,5 @@
 # Changelog for polysemy-mocks
 
-## Unreleased changes
+## 0.1.0.0
+
+* First release. Can mock effects.
