@@ -10,7 +10,6 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-{-# OPTIONS_GHC -ddump-splices #-}
 
 module Test.Polysemy.Mock.TeletypeTHSpec where
 
