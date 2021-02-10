@@ -27,7 +27,6 @@ library
   build-depends:
       base >=4.7 && <5
     , polysemy
-    , polysemy-plugin
     , template-haskell
   exposed-modules:
       Test.Polysemy.Mock
@@ -44,7 +43,6 @@ test-suite tests
     , hspec
     , polysemy
     , polysemy-mocks
-    , polysemy-plugin
   default-language: Haskell2010
   other-modules:
       Test.Polysemy.Mock.TeletypeTHSpec

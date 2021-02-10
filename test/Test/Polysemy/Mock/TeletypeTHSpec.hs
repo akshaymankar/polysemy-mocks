@@ -10,6 +10,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# OPTIONS_GHC -ddump-splices #-}
 
 module Test.Polysemy.Mock.TeletypeTHSpec where
 
@@ -38,8 +39,9 @@ program = do
 spec :: Spec
 spec =
   describe "program" $ do
-    it "greets" $ runM @IO . evalMock @Teletype @IO $ do
-      mockReadReturns @IO (pure "Akshay")
-      mock @Teletype @IO program
-      writes <- mockWriteCalls @IO
-      embed $ writes `shouldBe` ["Name: ", "Hello Akshay"]
+    it "greets" $
+      runM @IO . evalMock @Teletype @IO $ do
+        mockReadReturns @IO (pure "Akshay")
+        mock @Teletype @IO program
+        writes <- mockWriteCalls @IO
+        embed $ writes `shouldBe` ["Name: ", "Hello Akshay"]

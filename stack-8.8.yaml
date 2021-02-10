@@ -1,0 +1,7 @@
+resolver: lts-16.31
+
+packages:
+- .
+
+nix:
+  shell-file: stack-deps-8.8.nix

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Test.Polysemy.Mock.TH (genMock) where
@@ -118,7 +119,14 @@ mkMockToStateMatch t c =
   let pat = ConP (mockConName c) (map VarP vars)
       --
       vars = map fst (cliFunArgs c)
-      newArgs = ListE [TupE (map (VarE . fst) $ cliFunArgs c)]
+      newArgs = if length (cliFunArgs c) == 1
+                   then ListE [ VarE . fst . head . cliFunArgs $ c]
+                   else
+#if MIN_VERSION_template_haskell(2,16,0)
+                      ListE [TupE (map (Just . VarE . fst) $ cliFunArgs c)]
+#else
+                      ListE [TupE (map (VarE . fst) $ cliFunArgs c)]
+#endif
       oldArgs = AppE (VarE (callsFieldName c)) (VarE stateName)
       allArgs = InfixE (Just oldArgs) (VarE '(++)) (Just newArgs)
       newState = RecUpdE (VarE stateName) [(callsFieldName c, allArgs)]
@@ -236,7 +244,9 @@ defaultBang = Bang NoSourceUnpackedness NoSourceStrictness
 functionCallType :: ConLiftInfo -> Type
 functionCallType c =
   let arity = length $ cliFunArgs c
-   in AppT ListT $ foldl' AppT (TupleT arity) (map snd $ cliFunArgs c)
+   in if arity == 1
+        then AppT ListT $ snd $ head $ cliFunArgs c
+        else AppT ListT $ foldl' AppT (TupleT arity) (map snd $ cliFunArgs c)
 
 returnsFunctionType :: ConLiftInfo -> Type
 returnsFunctionType c =

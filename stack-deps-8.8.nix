@@ -4,5 +4,5 @@ let
 in
 pkgs.haskell.lib.buildStackProject {
   name = "polysemy-mocks";
-  ghc = pkgs.haskell.compiler.ghc8103;
+  ghc = pkgs.haskell.compiler.ghc884;
 }
