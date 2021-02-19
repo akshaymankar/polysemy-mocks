@@ -15,7 +15,9 @@ import Test.Polysemy.Mock
 -- | Generate mock using template-haskell.
 -- Example usage:
 --
--- > genMock ''Teletype
+-- @
+-- genMock ''Teletype
+-- @
 genMock :: Name -> Q [Dec]
 genMock effName = do
   (_, constructors) <- getEffectMetadata effName

@@ -28,11 +28,10 @@ import Data.Kind
 import Polysemy
 import Polysemy.State
 
--- | The 'Mock' class can be instantiated for an effect 'eff' and a functor 'm'.
--- Here 'eff' represents the effect being mocked and 'm' is the side-effect the mock implementation uses to keep track of 'MockState'.
+-- | Here 'eff' represents the effect being mocked and 'm' is the side-effect
+-- the mock implementation uses to keep 'MockState' up to date.
 --
--- To take the classic example of Teletype, we can mock Teletype using the 'Identity' functor like this:
--- Consder a Teletype effect defined as:
+-- Consder a @Teletype@ effect defined as following that needs to be mocked:
 --
 -- @
 -- data Teletype (m :: * -> *) a where
@@ -42,7 +41,9 @@ import Polysemy.State
 -- makeSem ''Teletype
 -- @
 --
--- A simple 'Mock' instance which always reads "Mock" when Read action is called and records all Write actions.
+-- A simple 'Mock' instance for @Teletype@ which always reads @\"Something\"@
+-- when the @Read@ action is called and records all the @Write@ actions could
+-- look like this:
 --
 -- @
 -- instance Mock Teletype Identity where
@@ -60,7 +61,7 @@ import Polysemy.State
 --     Write s -> send @(MockImpl Teletype Identity) $ MockWrite s
 --
 --   mockToState = reinterpretH $ \case
---     MockRead -> pureT "Mock"
+--     MockRead -> pureT \"Something\"
 --     MockWrite s -> do
 --       (MockState w) <- get @(MockState Teletype Identity)
 --       put $ MockState (w ++ [s])
@@ -70,7 +71,8 @@ import Polysemy.State
 --       pureT w
 -- @
 --
--- If we have a program which uses the @Teletype@ effect like this:
+-- Now with the help of this mock, a function which uses the @Teletype@ effect
+-- can be tested. Considering this is the function being tested:
 --
 -- @
 -- program :: Member Teletype r => Sem r ()
@@ -79,62 +81,64 @@ import Polysemy.State
 --  write $ "Hello " <> name
 -- @
 --
--- This program can be tested using hspec and our mock like this:
+-- A test could look like this (using hspec):
 --
 -- @
 -- spec :: Spec
 -- spec = describe "program" $ do
 --   it "writes hello message" $ do
---     let MockState w =
+--     let MockState recorededWrites =
 --           runIdentity . runM . execMock $
 --             mock @Teletype @Identity program
---     w `shouldBe` ["Hello Mock"]
+--     recorededWrites `shouldBe` ["Hello Something"]
 -- @
 --
--- One can write such tests without even using this class. This class and the
--- library is more useful when used with the template haskell generator for the
--- mocks. The generator will produce a different mock than written above and it
--- can be used like this:
+-- Such a test can be written even without using this library. This class and
+-- the library are more useful when used with the template haskell generator for
+-- the mocks. The generator will produce a different mock than written above and
+-- it can be used like this:
 --
 -- @
 -- genMock ''Teletype
 --
--- mockWriteReturns :: (String -> m ()) -> Sem '[MockImpl Teletype m, Embed m] ()
--- mockWriteReturns = send . MockWriteReturns
---
--- mockReadReturns :: m String -> Sem '[MockImpl Teletype m, Embed m] ()
--- mockReadReturns = send . MockReadReturns
---
--- mockReadCalls :: forall m. Sem '[MockImpl Teletype m, Embed m] [()]
--- mockReadCalls = send @(MockImpl Teletype m) MockReadCalls
---
--- mockWriteCalls :: forall m. Sem '[MockImpl Teletype m, Embed m] [String]
--- mockWriteCalls = send @(MockImpl Teletype m) MockWriteCalls
---
 -- spec :: Spec
 -- spec = describe "program" $ do
 --   it "writes hello message" $ runM @IO . evalMock do
---     mockReadReturns $ pure "Mock"
---     mockWriteReturns $ pure ()
+--     -- Setup what the Read action must return
+--     mockReadReturns $ pure \"Something\"
+--
+--     -- Mock the Teletype effect while running the program
 --     mock @Teletype @IO program
---     w <- mockWriteCalls
---     embed $ w `shouldBe` ["Hello Mock"]
+--
+--     -- Retrieve all the writes
+--     recordedWrites <- mockWriteCalls
+--
+--     -- Make assertions about expected writes
+--     embed $ recordedWrites `shouldBe` ["Hello Something"]
 -- @
 class Mock (eff :: Effect) (m :: Type -> Type) where
-  -- | The effect which 'eff' should be interpreted to
+  -- | The effect which 'eff' would be interpreted to when 'mock'. This is also
+  -- used to provide more actions which allow inspecting arguments provided to
+  -- actions of 'eff' and stubbing return values of actions in 'eff' based on
+  -- the arguments.
   data MockImpl eff m :: Effect
 
-  -- | The type keep information about the mock.
-  -- For example, it can be used to keep record of actions called on the effect and what to return on each call
+  -- | The type to keep information about the mock. For example, it can be used
+  -- to keep record of actions called on the effect and what to return on each
+  -- call.
   data MockState eff m
 
-  -- | Can be used to set default return values and initialize other attributes of the 'MockState'
+  -- | Can be used to set default return values and initialize other attributes
+  -- of the 'MockState'.
   initialMockState :: MockState eff m
 
-  -- | Swaps real effect for the mock one.
+  -- | Interpret 'eff' in terms of 'MockImpl eff'. The argument is usually a
+  -- value which is being tested.
   mock :: Member (MockImpl eff m) r => Sem (eff ': r) a -> Sem r a
 
-  -- | Update mock state for every action on the mock
+  -- | Interpret all actions of 'MockImpl eff m' to get 'State (MockImpl eff
+  -- m)'. The 'State' effect could then be resolved using 'initialMockState'.
+  -- Use 'runMock', 'evalMock' or 'execMock' for convinience.
   mockToState :: Member (Embed m) r => Sem (MockImpl eff m ': r) a -> Sem (State (MockState eff m) ': r) a
 
 -- | Run a mocked effect to get 'MockState' and the effect value
