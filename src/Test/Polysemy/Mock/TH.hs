@@ -20,7 +20,7 @@ import Test.Polysemy.Mock
 -- @
 genMock :: Name -> Q [Dec]
 genMock effName = do
-  (_, constructors) <- getEffectMetadata effName
+  constructors <- getEffectMetadata effName
   -- MockImpl
   let mockImplEffectType = ConT ''MockImpl `AppT` ConT effName `AppT` returnsEffect
   let mockImplReturnType = mockImplEffectType `AppT` VarT (mkName "m")

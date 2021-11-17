@@ -28,7 +28,7 @@ library
   ghc-options: -Wall
   build-depends:
       base >=4.7 && <5
-    , polysemy
+    , polysemy >= 1.7
     , template-haskell
   exposed-modules:
       Test.Polysemy.Mock
@@ -43,7 +43,7 @@ test-suite tests
   build-depends:
       base >=4.7 && <5
     , hspec
-    , polysemy
+    , polysemy >= 1.7
     , polysemy-mocks
   default-language: Haskell2010
   other-modules:
