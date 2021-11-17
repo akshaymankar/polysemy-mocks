@@ -12,12 +12,12 @@ packages:
   original:
     hackage: ghc-tcplugins-extra-0.3.2@sha256:1bbfd4449c3669a31618ea0ebc5d00d980a53988daad3b6218bab5c8cdff268d,1687
 - completed:
-    hackage: polysemy-1.3.0.0@sha256:bf1d559c7e26e8a0ed31fc45d84635e329a4a31bfd39e713a39adf639bcbd309,6141
+    hackage: polysemy-1.7.0.0@sha256:c972f33191113e2fe6809ea1cda24a6cabfeed2f115b3be0137dee7c65d08293,5977
     pantry-tree:
-      size: 4309
-      sha256: 770af8c91981ccb8fe388ba62897fdf4eb394df433ab10def66d6e111b6f09f7
+      size: 4577
+      sha256: 78c733f5dde13340e880bbb883dc64af948f6449da3a4025811cdc79c204dfde
   original:
-    hackage: polysemy-1.3.0.0@sha256:bf1d559c7e26e8a0ed31fc45d84635e329a4a31bfd39e713a39adf639bcbd309,6141
+    hackage: polysemy-1.7.0.0@sha256:c972f33191113e2fe6809ea1cda24a6cabfeed2f115b3be0137dee7c65d08293,5977
 - completed:
     hackage: th-abstraction-0.3.2.0@sha256:9b5b4e6e2bbff9b075ad7751ee98e2107090bd17b51d5442695b8990e4db6521,1851
     pantry-tree:

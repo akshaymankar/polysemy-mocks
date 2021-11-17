@@ -3,5 +3,8 @@ resolver: lts-16.31
 packages:
 - .
 
+extra-deps:
+- polysemy-1.7.0.0@sha256:c972f33191113e2fe6809ea1cda24a6cabfeed2f115b3be0137dee7c65d08293,5977
+
 nix:
   shell-file: stack-deps-8.8.nix
