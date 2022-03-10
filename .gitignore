@@ -3,3 +3,6 @@
 .dir-locals.el
 TAGS
 result
+.direnv
+cabal.project.local
+dist-newstyle

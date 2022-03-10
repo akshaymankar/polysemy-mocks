@@ -51,8 +51,8 @@ let mainBranchJob =
             , resource = mainBranch
             , trigger = Some True
             }
-        , runTestsWith mainBranch "stack.yaml"
-        , runTestsWith mainBranch "stack-8.8.yaml"
+        , runTestsWith mainBranch "ghc884"
+        , runTestsWith mainBranch "ghc8107"
         ]
       }
 
@@ -117,14 +117,14 @@ let markCheckFailure =
           }
 
 let runPRTestsWithHooks =
-      λ(stackYaml : Text) →
-        let testStep = runTestsWith pr stackYaml
+      λ(ghc : Text) →
+        let testStep = runTestsWith pr ghc
 
         in  Concourse.helpers.addHooks
               testStep
               Concourse.schemas.StepHooks::{
-              , on_success = Some (markCheckSuccess stackYaml)
-              , on_failure = Some (markCheckFailure stackYaml)
+              , on_success = Some (markCheckSuccess ghc)
+              , on_failure = Some (markCheckFailure ghc)
               }
 
 let prJob =
@@ -133,9 +133,9 @@ let prJob =
       , plan =
         [ Concourse.helpers.getStep
             Concourse.schemas.GetStep::{ resource = pr, trigger = Some True }
-        , markCheckPending [ "stack.yaml", "stack-8.8.yaml" ]
-        , runPRTestsWithHooks "stack.yaml"
-        , runPRTestsWithHooks "stack-8.8.yaml"
+        , markCheckPending [ "ghc8107", "ghc884" ]
+        , runPRTestsWithHooks "ghc8107"
+        , runPRTestsWithHooks "ghc884"
         ]
       }
 
