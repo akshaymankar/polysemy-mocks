@@ -5,10 +5,10 @@ let Prelude = ./deps/prelude.dhall
 let runTestsWith
     : Concourse.Types.Resource -> Text -> Concourse.Types.Step
     = \(repo : Concourse.Types.Resource) ->
-      \(stackYaml : Text) ->
+      \(ghc : Text) ->
         Concourse.helpers.taskStep
           Concourse.schemas.TaskStep::{
-          , task = "run-tests-${stackYaml}"
+          , task = "run-tests-${ghc}"
           , config =
               Concourse.Types.TaskSpec.Config
                 Concourse.schemas.TaskConfig::{
@@ -23,6 +23,8 @@ let runTestsWith
                   }
                 , inputs = Some
                   [ Concourse.schemas.TaskInput::{ name = repo.name } ]
+                , params = Some
+                    (toMap { CACHIX_AUTH_TOKEN = Some "((cachix-token))" })
                 , run = Concourse.schemas.TaskRunConfig::{
                   , path = "sh"
                   , args = Some
@@ -30,7 +32,7 @@ let runTestsWith
                     , ./compile-and-test.sh as Text
                     , let dollarZero = "compile-and-test.sh" in dollarZero
                     , repo.name
-                    , stackYaml
+                    , ghc
                     ]
                   }
                 }
