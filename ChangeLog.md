@@ -1,5 +1,9 @@
 # Changelog for polysemy-mocks
 
+## Next release
+
+* Support template-haskell-2.17.0 (and so GHC 9.0)
+
 ## 0.2.0.0
 
 * Support polysemy >= 1.7, drop support for older versions
