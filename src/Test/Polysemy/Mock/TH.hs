@@ -5,13 +5,13 @@ module Test.Polysemy.Mock.TH (genMock) where
 
 import Data.Bifunctor (first)
 import Data.List (foldl')
+import GHC.Stack (HasCallStack)
 import Language.Haskell.TH hiding (Strict)
 import Polysemy (Embed, Members, Sem, interpret, pureT, reinterpretH)
 import Polysemy.Internal (embed, send)
 import Polysemy.Internal.TH.Common
 import Polysemy.State (get, put)
 import Test.Polysemy.Mock
-import GHC.Stack (HasCallStack)
 
 -- | Generate mock using template-haskell.
 -- Example usage:
@@ -195,13 +195,14 @@ mkReturnsSem ::
   [Dec]
 mkReturnsSem mockImplEffType c =
   let funcName = mkName ("mock" <> nameBase (cliConName c) <> "Returns")
-      body = NormalB (InfixE (Just $ VarE 'send) (VarE '(.)) (Just $ ConE (returnsConName c)))
+      f = mkName "f"
+      body = NormalB $ VarE 'send `AppE` (ConE (returnsConName c) `AppE` VarE f)
       appArrowT = AppT . AppT ArrowT
       r = VarT $ mkName "r"
       semr t = ConT ''Sem `AppT` r `AppT` t
       typ = ForallT [] [membersEffListType mockImplEffType r] (returnsFunctionType c `appArrowT` semr (TupleT 0))
    in [ SigD funcName typ,
-        FunD funcName [Clause [] body []]
+        FunD funcName [Clause [VarP f] body []]
       ]
 
 #if MIN_VERSION_template_haskell(2,17,0)
