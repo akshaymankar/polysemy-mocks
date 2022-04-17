@@ -27,6 +27,7 @@ where
 import Data.Kind
 import Polysemy
 import Polysemy.State
+import GHC.Stack (HasCallStack)
 
 -- | Here 'eff' represents the effect being mocked and 'm' is the side-effect
 -- the mock implementation uses to keep 'MockState' up to date.
@@ -139,7 +140,7 @@ class Mock (eff :: Effect) (m :: Type -> Type) where
   -- | Interpret all actions of 'MockImpl eff m' to get 'State (MockImpl eff
   -- m)'. The 'State' effect could then be resolved using 'initialMockState'.
   -- Use 'runMock', 'evalMock' or 'execMock' for convinience.
-  mockToState :: Member (Embed m) r => Sem (MockImpl eff m ': r) a -> Sem (State (MockState eff m) ': r) a
+  mockToState :: (Member (Embed m) r, HasCallStack) => Sem (MockImpl eff m ': r) a -> Sem (State (MockState eff m) ': r) a
 
 -- | Run a mocked effect to get 'MockState' and the effect value
 runMock :: (Mock eff m, Member (Embed m) r) => Sem (MockImpl eff m ': r) a -> Sem r (MockState eff m, a)
