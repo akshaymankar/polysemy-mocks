@@ -12,6 +12,9 @@
             polysemy = hsuper.polysemy_1_7_1_0;
             polysemy-mocks = hsuper.callPackage ./default.nix {};
           };
+        ghc902Pkgs = pkgs.haskell.packages.ghc902.override {
+          overrides = ghcOverrides;
+        };
         ghc8107Pkgs = pkgs.haskell.packages.ghc8107.override {
           overrides = ghcOverrides;
         };
@@ -30,8 +33,12 @@
               pkgs.shellcheck
               pkgs.fly
               pkgs.cabal2nix
+              pkgs.haskell.compiler.ghc8107
+              pkgs.cabal-install
+              pkgs.haskellPackages.hspec-discover
             ];
           };
+          polysemy-mocks-ghc902 = ghc902Pkgs.polysemy-mocks;
           polysemy-mocks-ghc8107 = ghc8107Pkgs.polysemy-mocks;
           polysemy-mocks-ghc884 = ghc884Pkgs.polysemy-mocks;
         };
