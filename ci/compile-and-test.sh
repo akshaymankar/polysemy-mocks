@@ -10,5 +10,5 @@ echo 'experimental-features = nix-command flakes' >> /etc/nix/nix.conf
 
 cachix use akshaymankar
 
-echo "Building jsonpath with ghc=$ghc"
+echo "Building with ghc=$ghc"
 cachix watch-exec akshaymankar -- nix build -L "./$repo#polysemy-mocks-$ghc"

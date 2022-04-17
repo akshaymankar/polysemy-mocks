@@ -1,6 +1,7 @@
 cradle:
-  stack:
-    - path: ./src
-      component: polysemy-mocks:lib
-    - path: ./test
-      component: polysemy-mocks:test:tests
+  cabal:
+    - path: "src"
+      component: "lib:polysemy-mocks"
+
+    - path: "test"
+      component: "polysemy-mocks:test:tests"
