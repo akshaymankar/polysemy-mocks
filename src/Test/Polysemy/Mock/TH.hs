@@ -116,6 +116,13 @@ mkMockMatch t c =
       body = NormalB (AppE (AppTypeE sendFn t) theMock)
    in Match pat body []
 
+#if MIN_VERSION_template_haskell(2,17,0)
+#define UNQUALIFIED_DO Nothing
+#else
+#define UNQUALIFIED_DO
+#endif
+
+{- ORMOLU_DISABLE -}
 mkMockToStateMatch :: Type -> ConLiftInfo -> Match
 mkMockToStateMatch t c =
   let pat = ConP (mockConName c) (map VarP vars)
@@ -139,12 +146,14 @@ mkMockToStateMatch t c =
       body =
         NormalB
           ( DoE
+              UNQUALIFIED_DO
               [ getState t,
                 putState newState,
                 returnAsPureT
               ]
           )
    in Match pat body []
+{- ORMOLU_ENABLE -}
 
 mkReturnsToStateMatch :: Type -> ConLiftInfo -> Match
 mkReturnsToStateMatch t c =
@@ -155,6 +164,7 @@ mkReturnsToStateMatch t c =
       body =
         NormalB
           ( DoE
+              UNQUALIFIED_DO
               [ getState t,
                 putState newState,
                 returnNothing
@@ -169,6 +179,7 @@ mkCallsToStateMatch t c =
       body =
         NormalB
           ( DoE
+              UNQUALIFIED_DO
               [ getState t,
                 returnCalls
               ]
@@ -192,6 +203,12 @@ mkReturnsSem mockImplEffType c =
         FunD funcName [Clause [] body []]
       ]
 
+#if MIN_VERSION_template_haskell(2,17,0)
+#define TY_VAR_SPECIFICTY SpecifiedSpec
+#else
+#define TY_VAR_SPECIFICTY
+#endif
+
 mkCallsSem ::
   -- | Should look like: @MockImpl Teletype n@
   -- n is assumed to be 'stateEffectName', maybe this is problematic, but it works for now
@@ -204,7 +221,11 @@ mkCallsSem mockImplEffType c =
       body = NormalB $ typeAppliedSend `AppE` ConE (callsConName c)
       r = VarT $ mkName "r"
       semr t = ConT ''Sem `AppT` r `AppT` t
-      typ = ForallT [PlainTV returnsEffectName, PlainTV $ mkName "r"] [membersEffListType mockImplEffType r] (semr $ functionCallType c)
+      typ =
+        ForallT
+          [PlainTV returnsEffectName TY_VAR_SPECIFICTY, PlainTV (mkName "r") TY_VAR_SPECIFICTY]
+          [membersEffListType mockImplEffType r]
+          (semr $ functionCallType c)
    in [ SigD funcName typ,
         FunD funcName [Clause [] body []]
       ]
