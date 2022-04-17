@@ -11,6 +11,7 @@ import Polysemy.Internal (embed, send)
 import Polysemy.Internal.TH.Common
 import Polysemy.State (get, put)
 import Test.Polysemy.Mock
+import GHC.Stack (HasCallStack)
 
 -- | Generate mock using template-haskell.
 -- Example usage:
@@ -275,7 +276,7 @@ returnsFunctionType :: ConLiftInfo -> Type
 returnsFunctionType c =
   let argTypes = (map snd $ cliFunArgs c)
       returnType = (AppT returnsEffect $ cliEffRes c)
-   in foldr (AppT . AppT ArrowT) returnType argTypes
+   in ForallT [] [ConT ''HasCallStack] $ foldr (AppT . AppT ArrowT) returnType argTypes
 
 returnsEffect :: Type
 returnsEffect = VarT returnsEffectName
