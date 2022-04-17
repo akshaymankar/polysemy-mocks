@@ -25,6 +25,7 @@ module Test.Polysemy.Mock
 where
 
 import Data.Kind
+import GHC.Stack (HasCallStack)
 import Polysemy
 import Polysemy.State
 
@@ -139,18 +140,18 @@ class Mock (eff :: Effect) (m :: Type -> Type) where
   -- | Interpret all actions of 'MockImpl eff m' to get 'State (MockImpl eff
   -- m)'. The 'State' effect could then be resolved using 'initialMockState'.
   -- Use 'runMock', 'evalMock' or 'execMock' for convinience.
-  mockToState :: Member (Embed m) r => Sem (MockImpl eff m ': r) a -> Sem (State (MockState eff m) ': r) a
+  mockToState :: (Member (Embed m) r, HasCallStack) => Sem (MockImpl eff m ': r) a -> Sem (State (MockState eff m) ': r) a
 
 -- | Run a mocked effect to get 'MockState' and the effect value
-runMock :: (Mock eff m, Member (Embed m) r) => Sem (MockImpl eff m ': r) a -> Sem r (MockState eff m, a)
+runMock :: (Mock eff m, Member (Embed m) r, HasCallStack) => Sem (MockImpl eff m ': r) a -> Sem r (MockState eff m, a)
 runMock = runState initialMockState . mockToState
 
 -- | Like 'runMock' but discards the 'MockState'
-evalMock :: (Mock eff m, Member (Embed m) r) => Sem (MockImpl eff m ': r) a -> Sem r a
+evalMock :: (Mock eff m, Member (Embed m) r, HasCallStack) => Sem (MockImpl eff m ': r) a -> Sem r a
 evalMock = evalState initialMockState . mockToState
 
 -- | Like 'runMock' but only returns the 'MockState'
-execMock :: (Mock eff m, Member (Embed m) r) => Sem (MockImpl eff m ': r) a -> Sem r (MockState eff m)
+execMock :: (Mock eff m, Member (Embed m) r, HasCallStack) => Sem (MockImpl eff m ': r) a -> Sem r (MockState eff m)
 execMock = execState initialMockState . mockToState
 
 -- | Mock many effects
@@ -159,7 +160,7 @@ class MockMany (effs :: EffectRow) m (r :: EffectRow) where
   mockMany :: MockChain effs m r => Sem (effs :++: r) a -> Sem r a
 
   -- | Given a computation using Mock effects, evaluate the computation
-  evalMocks :: (MocksExist effs m, Member (Embed m) r) => Sem (MockImpls effs m :++: r) a -> Sem r a
+  evalMocks :: (MocksExist effs m, Member (Embed m) r, HasCallStack) => Sem (MockImpls effs m :++: r) a -> Sem r a
 
 instance MockMany '[] r m where
   mockMany = id

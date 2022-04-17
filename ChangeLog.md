@@ -3,6 +3,8 @@
 ## Next release
 
 * Support template-haskell-2.17.0 (and so GHC 9.0)
+* Add 'HasCallStack' constraint to 'evalMocks', {run,eval,exec}Mock and default
+  implementations for the "returns" functions (which throws error, by default).
 
 ## 0.2.0.0
 
