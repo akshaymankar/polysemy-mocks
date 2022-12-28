@@ -110,7 +110,7 @@ mkInitialReturns c =
 
 mkMockMatch :: Type -> ConLiftInfo -> Match
 mkMockMatch t c =
-  let pat = ConP (cliConName c) (map (VarP . fst) (cliFunArgs c))
+  let pat = ConP (cliConName c) (map snd (cliFunArgs c)) (map (VarP . fst) (cliFunArgs c))
       sendFn = VarE 'send
       args = map (VarE . fst) (cliFunArgs c)
       theMock = foldl' AppE (ConE $ mockConName c) args
@@ -126,9 +126,10 @@ mkMockMatch t c =
 {- ORMOLU_DISABLE -}
 mkMockToStateMatch :: Type -> ConLiftInfo -> Match
 mkMockToStateMatch t c =
-  let pat = ConP (mockConName c) (map VarP vars)
+  let pat = ConP (mockConName c) types (map VarP vars)
       --
       vars = map fst (cliFunArgs c)
+      types = map snd (cliFunArgs c)
       newArgs = if length (cliFunArgs c) == 1
                    then ListE [ VarE . fst . head . cliFunArgs $ c]
                    else
@@ -159,7 +160,7 @@ mkMockToStateMatch t c =
 mkReturnsToStateMatch :: Type -> ConLiftInfo -> Match
 mkReturnsToStateMatch t c =
   let f = mkName "f"
-      pat = ConP (returnsConName c) [VarP f]
+      pat = ConP (returnsConName c) [VarT f] [VarP f]
       newState = RecUpdE (VarE stateName) [(returnsFieldName c, VarE f)]
       returnNothing = NoBindS $ AppE (VarE 'pureT) (TupE [])
       body =
