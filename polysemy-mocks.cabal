@@ -29,7 +29,7 @@ library
   build-depends:
       base >=4.7 && <5
     , polysemy >= 1.7
-    , template-haskell >= 2.18.0.0
+    , template-haskell
   exposed-modules:
       Test.Polysemy.Mock
       Test.Polysemy.Mock.TH
