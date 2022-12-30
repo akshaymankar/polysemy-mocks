@@ -27,6 +27,12 @@
         ghc884Pkgs = pkgs.haskell.packages.ghc884.override {
           overrides = ghcOverrides;
         };
+
+        shell = ghc924Pkgs.shellFor {
+          packages = p: [p.polysemy-mocks];
+        };
+        ghcWithPackages = shell.nativeBuildInputs ++ shell.buildInputs;
+
       in rec {
         packages = {
           devEnv = pkgs.buildEnv {
@@ -39,10 +45,9 @@
               pkgs.shellcheck
               pkgs.fly
               pkgs.cabal2nix
-              pkgs.haskell.compiler.ghc8107
               pkgs.cabal-install
               pkgs.haskellPackages.hspec-discover
-            ];
+            ] ++ ghcWithPackages;
           };
           polysemy-mocks-ghc942 = ghc942Pkgs.polysemy-mocks;
           polysemy-mocks-ghc924 = ghc924Pkgs.polysemy-mocks;
@@ -51,5 +56,5 @@
           polysemy-mocks-ghc884 = ghc884Pkgs.polysemy-mocks;
         };
         defaultPackage = packages.devEnv;
-    });
+      });
 }
