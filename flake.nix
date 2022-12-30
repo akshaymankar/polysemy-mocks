@@ -9,9 +9,9 @@
       let
         pkgs = import nixpkgs {inherit system;};
         ghcOverrides = hself: hsuper: {
-            polysemy = hsuper.polysemy_1_8_0_0;
-            polysemy-mocks = hsuper.callPackage ./default.nix {};
-          };
+          polysemy = pkgs.haskell.lib.doJailbreak hsuper.polysemy_1_8_0_0;
+          polysemy-mocks = hsuper.callPackage ./default.nix {};
+        };
         ghc942Pkgs = pkgs.haskell.packages.ghc942.override {
           overrides = ghcOverrides;
         };
