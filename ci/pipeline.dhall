@@ -42,7 +42,7 @@ let pr =
 
 let runTestsWith = ./run-tests-with.dhall
 
-let ghcs = [ "ghc884", "ghc8107", "ghc902" ]
+let ghcs = [ "ghc884", "ghc8107", "ghc902", "ghc924", "ghc942" ]
 
 let mainBranchJob =
       Concourse.schemas.Job::{

@@ -9,9 +9,15 @@
       let
         pkgs = import nixpkgs {inherit system;};
         ghcOverrides = hself: hsuper: {
-            polysemy = hsuper.polysemy_1_7_1_0;
+            polysemy = hsuper.polysemy_1_8_0_0;
             polysemy-mocks = hsuper.callPackage ./default.nix {};
           };
+        ghc942Pkgs = pkgs.haskell.packages.ghc942.override {
+          overrides = ghcOverrides;
+        };
+        ghc924Pkgs = pkgs.haskell.packages.ghc924.override {
+          overrides = ghcOverrides;
+        };
         ghc902Pkgs = pkgs.haskell.packages.ghc902.override {
           overrides = ghcOverrides;
         };
@@ -38,6 +44,8 @@
               pkgs.haskellPackages.hspec-discover
             ];
           };
+          polysemy-mocks-ghc942 = ghc942Pkgs.polysemy-mocks;
+          polysemy-mocks-ghc924 = ghc924Pkgs.polysemy-mocks;
           polysemy-mocks-ghc902 = ghc902Pkgs.polysemy-mocks;
           polysemy-mocks-ghc8107 = ghc8107Pkgs.polysemy-mocks;
           polysemy-mocks-ghc884 = ghc884Pkgs.polysemy-mocks;
