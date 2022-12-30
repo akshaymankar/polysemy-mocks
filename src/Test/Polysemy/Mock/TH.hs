@@ -187,7 +187,11 @@ mkReturnsToStateMatch t c =
 
 mkCallsToStateMatch :: Type -> ConLiftInfo -> Match
 mkCallsToStateMatch t c =
+#if MIN_VERSION_template_haskell(2,18,0)
+  let pat = ConP (callsConName c) [] []
+#else
   let pat = ConP (callsConName c) []
+#endif
       returnCalls = NoBindS $ AppE (VarE 'pureT) (AppE (VarE (callsFieldName c)) (VarE stateName))
       body =
         NormalB
