@@ -1,7 +1,7 @@
 cabal-version: 1.12
 
 name:           polysemy-mocks
-version:        0.3.0.0
+version:        0.3.1.0
 description:    Please see the README on GitHub at <https://github.com/akshaymankar/polysemy-mocks#readme>
 homepage:       https://github.com/akshaymankar/polysemy-mocks#readme
 bug-reports:    https://github.com/akshaymankar/polysemy-mocks/issues
